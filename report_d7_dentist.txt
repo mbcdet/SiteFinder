@@ -1,0 +1,19 @@
+Category: dentist
+District: 7
+
+Businesses Collected: 5
+Duplicates Removed:   0
+Businesses Persisted: 5
+
+No Website:   1
+Social Only:  0
+Has Website:  4
+
+Enriched:     0
+Not Enriched: 5
+
+Potential Leads: 1    (= No Website + Social Only)
+
+Run Duration: 0m 11s
+Generated At: 2026-06-26T11:15:16.756174+00:00
+Run ID:       20260626T111506-d7-dentist

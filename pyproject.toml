@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sitefinder"
+version = "0.1.0"
+description = "Lead-generation MVP: find Vienna businesses with no or poor website."
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.6",
+    "pydantic-settings>=2.2",
+    "httpx>=0.27",
+    "typer>=0.12",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.4", "mypy>=1.10"]
+
+[project.scripts]
+sitefinder = "sitefinder.cli.main:app"
+
+[tool.setuptools.packages.find]
+include = ["sitefinder*"]
+
+[tool.setuptools.package-data]
+sitefinder = ["config/regions/*.yaml", "database/*.sql"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true

@@ -1,0 +1,44 @@
+city: Vienna
+country_code: AT
+osm_area: Wien  # Overpass administrative area name for Vienna
+
+# Vienna postal codes: 1<district:02d>0 (District 7 -> 1070, District 23 -> 1230)
+districts:
+  1: ["1010"]
+  2: ["1020"]
+  3: ["1030"]
+  4: ["1040"]
+  5: ["1050"]
+  6: ["1060"]
+  7: ["1070"]
+  8: ["1080"]
+  9: ["1090"]
+  10: ["1100"]
+  11: ["1110"]
+  12: ["1120"]
+  13: ["1130"]
+  14: ["1140"]
+  15: ["1150"]
+  16: ["1160"]
+  17: ["1170"]
+  18: ["1180"]
+  19: ["1190"]
+  20: ["1200"]
+  21: ["1210"]
+  22: ["1220"]
+  23: ["1230"]
+
+# Internal category -> OSM tag selectors (key=value). Add categories here, not in code.
+categories:
+  dentist:
+    osm_tags: ["amenity=dentist", "healthcare=dentist"]
+  hair_salon:
+    osm_tags: ["shop=hairdresser"]
+  restaurant:
+    osm_tags: ["amenity=restaurant"]
+  cafe:
+    osm_tags: ["amenity=cafe"]
+  bakery:
+    osm_tags: ["shop=bakery"]
+  physiotherapist:
+    osm_tags: ["healthcare=physiotherapist", "amenity=physiotherapist"]

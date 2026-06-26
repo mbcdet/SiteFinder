@@ -1,0 +1,2 @@
+[console_scripts]
+sitefinder = sitefinder.cli.main:app

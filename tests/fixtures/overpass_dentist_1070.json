@@ -1,0 +1,80 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API",
+  "elements": [
+    {
+      "type": "node",
+      "id": 111,
+      "lat": 48.2010,
+      "lon": 16.3450,
+      "tags": {
+        "amenity": "dentist",
+        "name": "Zahnarztpraxis Dr. Huber",
+        "addr:street": "Mariahilfer Straße",
+        "addr:housenumber": "10",
+        "addr:postcode": "1070",
+        "addr:city": "Wien",
+        "phone": "+43 1 5230000",
+        "website": "https://zahnarzt-huber.at"
+      }
+    },
+    {
+      "type": "node",
+      "id": 222,
+      "lat": 48.2020,
+      "lon": 16.3460,
+      "tags": {
+        "healthcare": "dentist",
+        "name": "Dental Studio Neubau",
+        "addr:postcode": "1070",
+        "contact:phone": "+43 1 5231111",
+        "contact:facebook": "https://facebook.com/dentalstudioneubau"
+      }
+    },
+    {
+      "type": "node",
+      "id": 333,
+      "lat": 48.2030,
+      "lon": 16.3470,
+      "tags": {
+        "amenity": "dentist",
+        "name": "Dr. Klein Kieferorthopädie",
+        "addr:street": "Kirchengasse",
+        "addr:housenumber": "5",
+        "addr:postcode": "1070"
+      }
+    },
+    {
+      "type": "way",
+      "id": 444,
+      "center": { "lat": 48.2040, "lon": 16.3480 },
+      "tags": {
+        "amenity": "dentist",
+        "name": "Lächeln Zahnzentrum",
+        "addr:postcode": "1070",
+        "website": "https://www.facebook.com/laechelnzahnzentrum"
+      }
+    },
+    {
+      "type": "node",
+      "id": 555,
+      "lat": 48.2050,
+      "lon": 16.3490,
+      "tags": {
+        "amenity": "dentist",
+        "addr:postcode": "1070"
+      }
+    },
+    {
+      "type": "way",
+      "id": 666,
+      "center": { "lat": 48.2010, "lon": 16.3451 },
+      "tags": {
+        "amenity": "dentist",
+        "name": "Zahnarztpraxis Dr. Huber",
+        "addr:postcode": "1070",
+        "website": "https://zahnarzt-huber.at"
+      }
+    }
+  ]
+}
