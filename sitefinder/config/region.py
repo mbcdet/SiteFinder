@@ -17,11 +17,16 @@ class RegionConfig(BaseModel):
     country_code: str = "AT"
     osm_area: str = ""  # Overpass area name (defaults to city if empty)
     districts: dict[int, list[str]]  # district -> postal codes
+    district_names: dict[int, str] = {}  # district -> admin-boundary (Bezirk) name
     categories: dict[str, CategoryConfig]
 
     @property
     def overpass_area(self) -> str:
         return self.osm_area or self.city
+
+    def district_name(self, district: int) -> str | None:
+        """Administrative-boundary name for a district (used for boundary-based discovery)."""
+        return self.district_names.get(district)
 
     @classmethod
     def load(cls, path: Path | str) -> RegionConfig:

@@ -34,7 +34,7 @@ def _biz(name="Zahnarzt Huber", lat=48.2, website=None) -> Business:
         name=name,
         category="dentist",
         location=Location(latitude=lat, longitude=16.3, postal_code="1070", city="Wien"),
-        web_presence=WebPresence(website_url=website),
+        web_presence=WebPresence(website_osm=website),
         provenance=Provenance(discovered_by=SourceName.OSM, source_ids={"osm": "node/1"}),
     )
 
@@ -65,7 +65,7 @@ def test_enrich_populates_rating_website_placeid():
     out = e.enrich(_biz())
     assert out.rating.score == 4.7
     assert out.rating.review_count == 53
-    assert out.web_presence.website_url == "https://huber.at"
+    assert out.web_presence.website_google == "https://huber.at"
     assert out.provenance.source_ids["google_places"] == "ChIJ123"
     assert SourceName.GOOGLE_PLACES in out.provenance.enriched_by
     assert out.provenance.last_enriched is not None

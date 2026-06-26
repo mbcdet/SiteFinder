@@ -56,7 +56,7 @@ def test_element_to_business_full_mapping(region, overpass_dentist_1070):
     assert huber.location.postal_code == "1070"
     assert huber.location.street == "Mariahilfer Straße 10"
     assert huber.contact.phone == "+43 1 5230000"
-    assert huber.web_presence.website_url == "https://zahnarzt-huber.at"
+    assert huber.web_presence.website_osm == "https://zahnarzt-huber.at"
     assert huber.provenance.source_ids["osm"] == "node/111"
 
 
@@ -78,3 +78,36 @@ def test_discover_with_injected_client(region, overpass_dentist_1070):
     out = list(source.discover(_query()))
     assert len(out) == 5  # 6 elements, 1 unnamed skipped
     assert client.calls and client.calls[0][1]["data"].startswith("[out:json]")
+
+
+def test_build_overpass_query_boundary_strategy():
+    query = DiscoveryQuery(
+        category="dentist",
+        city="Vienna",
+        district=7,
+        district_area="Neubau",
+        osm_tags=["amenity=dentist"],
+        postal_codes=["1070"],
+    )
+    ql = build_overpass_query(query)
+    assert (
+        'area["boundary"="administrative"]["admin_level"="9"]["name"="Neubau"]->.searchArea;'
+        in ql
+    )
+    assert 'nwr["amenity"="dentist"](area.searchArea);' in ql
+    assert "addr:postcode" not in ql  # boundary search does not depend on the postcode tag
+
+
+def test_default_district_used_when_postcode_missing(region):
+    element = {
+        "type": "node",
+        "id": 1,
+        "lat": 48.2,
+        "lon": 16.3,
+        "tags": {"amenity": "dentist", "name": "Praxis ohne PLZ"},
+    }
+    business = element_to_business(element, "dentist", region, default_district=7)
+    assert business is not None
+    # postcode backfilled from the searched district; district resolved either way
+    assert business.location.postal_code == "1070"
+    assert business.location.district == 7

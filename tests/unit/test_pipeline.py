@@ -24,7 +24,7 @@ def _b(name: str, osm: str, website=None, social=None) -> Business:
         name=name,
         category="dentist",
         location=Location(district=7, postal_code="1070"),
-        web_presence=WebPresence(website_url=website, social_urls=social or []),
+        web_presence=WebPresence(website_osm=website, social_urls=social or []),
         provenance=Provenance(discovered_by=SourceName.OSM, source_ids={"osm": osm}),
     )
 

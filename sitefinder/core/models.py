@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
-from sitefinder.core.enums import SourceName, WebsiteStatus
+from sitefinder.core.enums import SourceName, WebsiteMatch, WebsiteStatus
 
 
 def utcnow() -> datetime:
@@ -34,8 +34,18 @@ class Rating(BaseModel):
 
 
 class WebPresence(BaseModel):
+    """Web presence with provider provenance preserved.
+
+    Raw provider-reported websites are kept independently (`website_osm`, `website_google`);
+    `effective_website` is the social-aware site the audit should use; `website_match` records
+    how the two providers compare. Phase 2 consumes this normalized shape regardless of whether
+    Google enrichment ran."""
+
     status: WebsiteStatus = WebsiteStatus.UNKNOWN
-    website_url: str | None = None
+    website_osm: str | None = None
+    website_google: str | None = None
+    effective_website: str | None = None  # derived by the checker (social links excluded)
+    website_match: WebsiteMatch = WebsiteMatch.NONE
     social_urls: list[str] = Field(default_factory=list)
     checked_at: datetime | None = None
 
@@ -71,8 +81,9 @@ class DiscoveryQuery(BaseModel):
     district: int
     country_code: str = "AT"
     osm_area: str = ""  # Overpass area name, e.g. "Wien" (differs from display city)
+    district_area: str = ""  # district admin-boundary name, e.g. "Neubau" (preferred search)
     osm_tags: list[str] = Field(default_factory=list)  # e.g. ["amenity=dentist"]
-    postal_codes: list[str] = Field(default_factory=list)  # district filter
+    postal_codes: list[str] = Field(default_factory=list)  # district filter (fallback strategy)
     limit: int | None = None
 
 

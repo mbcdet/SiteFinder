@@ -19,3 +19,13 @@ class WebsiteStatus(str, Enum):
     SOCIAL_ONLY = "social_only"
     HAS_SITE = "has_site"
     UNKNOWN = "unknown"
+
+
+class WebsiteMatch(str, Enum):
+    """Provenance comparison between OSM- and Google-reported websites."""
+
+    NONE = "none"  # neither source has a website
+    OSM_ONLY = "osm_only"
+    GOOGLE_ONLY = "google_only"
+    MATCH = "match"  # both present and equivalent
+    DIFFERENT = "different"  # both present but disagree

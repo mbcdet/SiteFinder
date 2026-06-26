@@ -522,7 +522,7 @@ Extensibility is concrete, not aspirational. Each future need maps to a specific
 
 | # | Risk | Impact | Mitigation |
 |---|---|---|---|
-| R1 | OSM coverage of tiny businesses is patchy/stale | Real leads missed in discovery | Accept for Phase 1; measure miss-rate during validation; directory plugins (P1.5) backfill |
+| R1 | OSM coverage of tiny businesses is patchy/stale | Real leads missed in discovery | Mitigated: discovery now searches the district admin boundary (admin_level=9), no longer requiring an `addr:postcode` tag; remaining gaps measured during validation and backfilled by directory plugins (P1.5) |
 | R2 | OSM↔Google matching is imperfect (name/geo fuzzy) | Wrong rating attached, or no match | Conservative match thresholds; store match confidence; leave unmatched as presence-only leads |
 | R3 | Places free-tier caps / pricing change | Enrichment cost creeps up | Off by default; field masks; freshness TTL; hard budget cap in config |
 | R4 | "Poor website" is subjective (Phase 2) | Lead score becomes noise | Defer to P2; design audit as explainable, objective rule set |
@@ -568,3 +568,52 @@ justified in §10.
 On approval, implementation proceeds **module by module** per `ROADMAP_PHASE1.md`, starting from
 `core` (models + interfaces) outward, each module landing with tests before the next begins.
 No Phase-2+ code is written until Phase-1 validation results are in.
+
+---
+
+## 16. Phase 2 — Website Audit & Lead Scoring
+
+Phase 2 adds website quality auditing and lead scoring as **independent pipeline stages** over
+the same normalized `Business` model. Three principles hold:
+
+- **Google is never mandatory.** Two workflows produce identical downstream behavior: discovery →
+  audit → scoring (free), or discovery → Google enrichment → audit → scoring. The audit/scoring
+  code cannot tell which ran.
+- **Provider provenance is preserved.** `WebPresence` keeps `website_osm` and `website_google`
+  raw, derives a social-aware `effective_website` (what the audit uses) and a `website_match`
+  (MATCH/OSM_ONLY/GOOGLE_ONLY/DIFFERENT/NONE).
+- **Fetch once, check many.** Each site is fetched a single time into an immutable `SiteSnapshot`;
+  every checker is a pure function of that snapshot — cheap, deterministic, offline-testable.
+
+```
+sitefinder/
+├── analyzer/                 # website audit
+│   ├── snapshot.py           # SiteSnapshot + single fetch
+│   ├── htmlutils.py          # dependency-free HTML heuristics
+│   ├── audit.py              # WebsiteAuditor: orchestrate checkers, aggregate weighted score
+│   ├── models.py             # SiteSnapshot, CheckResult, AuditReport
+│   └── checkers/             # one file per single-responsibility checker
+│       ├── base.py           # Checker ABC
+│       ├── ssl.py performance.py mobile.py seo.py
+│       └── contact.py booking.py broken_links.py accessibility.py
+├── lead_scoring/
+│   ├── scoring.py            # rules-based score_lead(business, audit) -> LeadScore
+│   └── models.py
+├── audit_pipeline.py         # run_audit_pipeline: audit + score every lead, ranked
+└── reports/
+    ├── audit_report.py       # AuditReporter -> audit_report.txt
+    └── final_report.py       # FinalReporter -> final_report.txt (ranked prospects)
+```
+
+**Audit score** (0–100, higher = better site) is a weighted average over applicable checks.
+**Lead score** (0–100, higher = better *prospect*) inverts site quality: no website 90, social
+only 80, existing site `0.7·(100 − audit_score)`, plus an optional reputation bonus from Google
+review count (only when enrichment ran). Adding a checker = one file implementing `Checker` +
+one line in `default_checkers()`; nothing else changes.
+
+**Flow:** `discovery (Pipeline) → optional enrichment (runner) → audit + scoring
+(audit_pipeline) → reports`. Outputs never overwrite: `leads.csv`, `leads_enriched.csv`,
+`report.txt`, `audit_report.txt`, `final_report.txt`.
+
+Out of Phase-2 scope (future): CRM, dashboard, maps, AI summaries, proposal/email automation,
+full link-crawl and Lighthouse-grade performance metrics.

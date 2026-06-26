@@ -20,7 +20,13 @@ from sitefinder.infra.rate_limit import RateLimiter
 
 log = get_logger(__name__)
 
-_SOCIAL_TAG_KEYS = ("contact:facebook", "contact:instagram", "facebook", "instagram")
+_SOCIAL_TAG_KEYS = (
+    "contact:facebook",
+    "contact:instagram",
+    "contact:tiktok",
+    "facebook",
+    "instagram",
+)
 _WEBSITE_TAG_KEYS = ("website", "contact:website", "url")
 
 
@@ -28,23 +34,42 @@ class _HttpClient(Protocol):
     def post(self, url: str, data: dict[str, str]) -> Any: ...
 
 
+def _tag_pairs(osm_tags: list[str]) -> list[tuple[str, str]]:
+    return [tuple(t.split("=", 1)) for t in osm_tags if "=" in t]  # type: ignore[misc]
+
+
 def build_overpass_query(query: DiscoveryQuery, timeout: int = 60) -> str:
     """Pure function: build Overpass QL for a resolved DiscoveryQuery.
 
-    Filters by the district's postal code(s) within the city area. Businesses without an
-    ``addr:postcode`` tag are not returned — a known OSM-coverage limitation (see ROADMAP R1).
+    Preferred strategy (``district_area`` set): search within the district administrative
+    boundary (Bezirk, admin_level=9). This captures every business geographically in the
+    district, including those lacking an ``addr:postcode`` tag — a major coverage gain over
+    tag-based filtering.
+
+    Fallback strategy: filter by the district's postal code(s) within the city area. Used only
+    when no boundary name is configured; misses businesses without an ``addr:postcode`` tag.
     """
-    area = query.osm_area or query.city
-    lines = []
-    for tag in query.osm_tags:
-        if "=" not in tag:
-            continue
-        key, value = tag.split("=", 1)
-        for plz in query.postal_codes:
-            lines.append(f'  nwr["{key}"="{value}"]["addr:postcode"="{plz}"](area.searchArea);')
+    pairs = _tag_pairs(query.osm_tags)
+
+    if query.district_area:
+        lines = [f'  nwr["{k}"="{v}"](area.searchArea);' for k, v in pairs]
+        # boundary=administrative guards against non-boundary areas sharing the Bezirk name.
+        area_decl = (
+            f'area["boundary"="administrative"]["admin_level"="9"]'
+            f'["name"="{query.district_area}"]->.searchArea;'
+        )
+    else:
+        area = query.osm_area or query.city
+        lines = [
+            f'  nwr["{k}"="{v}"]["addr:postcode"="{plz}"](area.searchArea);'
+            for k, v in pairs
+            for plz in query.postal_codes
+        ]
+        area_decl = f'area["name"="{area}"]["admin_level"="4"]->.searchArea;'
+
     return (
         f"[out:json][timeout:{timeout}];\n"
-        f'area["name"="{area}"]["admin_level"="4"]->.searchArea;\n'
+        f"{area_decl}\n"
         f"(\n" + "\n".join(lines) + "\n);\n"
         f"out center tags;"
     )
@@ -73,10 +98,16 @@ def _first(tags: dict[str, str], keys: tuple[str, ...]) -> str | None:
 
 
 def element_to_business(
-    element: dict[str, Any], category: str, region: RegionConfig
+    element: dict[str, Any],
+    category: str,
+    region: RegionConfig,
+    default_district: int | None = None,
 ) -> Business | None:
     """Map a single Overpass element to a Business. Returns None for unnamed elements
-    (no name = not an actionable lead). Presence status is left UNKNOWN for the checker."""
+    (no name = not an actionable lead). Presence status is left UNKNOWN for the checker.
+
+    ``default_district`` is the district we searched (boundary strategy); it is used when the
+    element has no ``addr:postcode`` tag to derive the district from."""
     tags = element.get("tags", {})
     name = tags.get("name") or tags.get("brand")
     if not name:
@@ -84,6 +115,12 @@ def element_to_business(
 
     lat, lon = _coords(element)
     postal = tags.get("addr:postcode")
+    if postal is None and default_district is not None:
+        # Boundary search guarantees the district even when the POI lacks an addr:postcode tag.
+        try:
+            postal = region.postal_codes(default_district)[0]
+        except (KeyError, IndexError):
+            postal = None
     location = Location(
         latitude=lat,
         longitude=lon,
@@ -91,14 +128,14 @@ def element_to_business(
         postal_code=postal,
         city=tags.get("addr:city"),
         country_code=region.country_code,
-        district=region.district_for_postal(postal),
+        district=region.district_for_postal(postal) or default_district,
     )
     contact = Contact(
         phone=_first(tags, ("phone", "contact:phone")),
         email=_first(tags, ("email", "contact:email")),
     )
     web = WebPresence(
-        website_url=_first(tags, _WEBSITE_TAG_KEYS),
+        website_osm=_first(tags, _WEBSITE_TAG_KEYS),
         social_urls=[tags[k] for k in _SOCIAL_TAG_KEYS if tags.get(k)],
     )
     source_id = f"{element.get('type')}/{element.get('id')}"
@@ -138,7 +175,8 @@ class OSMDataSource(DataSource):
         businesses = [
             b
             for el in elements
-            if (b := element_to_business(el, query.category, self._region)) is not None
+            if (b := element_to_business(el, query.category, self._region, query.district))
+            is not None
         ]
         log.info(
             "OSM: %d named businesses (%d raw elements) for %s, district %d",

@@ -71,8 +71,8 @@ class Pipeline:
                 business.provenance.source_ids["google_places"] = existing.provenance.source_ids[
                     "google_places"
                 ]
-            if not business.web_presence.website_url and existing.web_presence.website_url:
-                business.web_presence.website_url = existing.web_presence.website_url
+            if existing.web_presence.website_google:
+                business.web_presence.website_google = existing.web_presence.website_google
             return business
         return self._enricher.enrich(business)
 

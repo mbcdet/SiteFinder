@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     overpass_url: str = "https://overpass-api.de/api/interpreter"
     overpass_min_interval: float = 1.0  # seconds between Overpass requests (politeness)
 
-    freshness_days: int = 30  # skip re-enrichment within this window
+    freshness_days: int = 30  # cache window: skip re-enrichment within this many days
 
     google_places_api_key: str | None = None
+    places_min_interval: float = 0.1  # seconds between Places requests
+    enrichment_cost_per_call: float = 0.017  # for the pre-run cost estimate (USD)
+    enrichment_seconds_per_call: float = 0.8  # for the pre-run time estimate
+
+    audit_timeout: float = 15.0  # per-site fetch timeout for the website audit

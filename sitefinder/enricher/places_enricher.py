@@ -56,9 +56,9 @@ class GooglePlacesEnricher(Enricher):
             review_count=place.get("userRatingCount"),
             source=SourceName.GOOGLE_PLACES,
         )
-        website = place.get("websiteUri")
-        if website and not business.web_presence.website_url:
-            business.web_presence.website_url = website
+        # Record Google's website as its own provenance field; never overwrite the OSM one.
+        if website := place.get("websiteUri"):
+            business.web_presence.website_google = website
         if place_id := place.get("id"):
             business.provenance.source_ids["google_places"] = place_id
         if SourceName.GOOGLE_PLACES not in business.provenance.enriched_by:
